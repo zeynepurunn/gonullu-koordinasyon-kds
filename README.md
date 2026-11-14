@@ -70,9 +70,7 @@ Terminal çıktısı:
 - **index.html** → tarayıcıda çift tıkla (gönüllü kayıt)
 - **admin.html** → tarayıcıda çift tıkla (yönetici paneli)
 
-### 5. Admin girişi
-- E-posta: `admin@deprem.gov.tr`
-- Şifre:   `admin123`
+
 
 ---
 
