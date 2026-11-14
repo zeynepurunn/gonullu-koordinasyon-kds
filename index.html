@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Deprem Gönüllü Sistemi</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" />
+  <style>
+    :root {
+      --primary: #1a3a5c;
+      --accent:  #e63946;
+      --light:   #f0f4f8;
+    }
+    body { background: var(--light); font-family: 'Segoe UI', sans-serif; }
+
+    .navbar-brand { font-weight: 800; font-size: 1.2rem; letter-spacing: .5px; }
+
+    .hero {
+      background: linear-gradient(135deg, var(--primary) 0%, #2d6a9f 100%);
+      color: #fff; padding: 60px 0 48px;
+    }
+    .hero h1 { font-size: 2.4rem; font-weight: 800; }
+    .hero p  { font-size: 1.1rem; opacity: .88; }
+
+    /* GÖREV BADGELERİ */
+    .badge-saglik    { background: #fee2e2; color: #991b1b; }
+    .badge-arama     { background: #fef3c7; color: #92400e; }
+    .badge-lojistik  { background: #dbeafe; color: #1e40af; }
+    .badge-beslenme  { background: #d1fae5; color: #065f46; }
+    .badge-psikoloji { background: #ede9fe; color: #5b21b6; }
+    .badge-genel     { background: #f1f5f9; color: #475569; }
+    .gorev-badge { border-radius: 20px; padding: 4px 14px; font-weight: 600; font-size: .85rem; display: inline-block; }
+
+    /* GÖREV KARTI — tıklanabilir */
+    .gorev-kart {
+      border: 2px solid transparent;
+      border-radius: 16px;
+      background: #fff;
+      padding: 20px 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: all .3s ease;
+      box-shadow: 0 2px 8px rgba(0,0,0,.07);
+      user-select: none;
+    }
+    .gorev-kart:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px rgba(0,0,0,.13);
+    }
+    .gorev-kart.aktif {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 28px rgba(0,0,0,.15);
+    }
+    .gorev-kart .gorev-ikon { font-size: 2.2rem; margin-bottom: 10px; transition: transform .3s; }
+    .gorev-kart.aktif .gorev-ikon { transform: scale(1.2); }
+    .gorev-kart .ok-ikon { font-size: .85rem; margin-top: 8px; opacity: .5; transition: all .3s; }
+    .gorev-kart.aktif .ok-ikon { opacity: 1; }
+
+    /* GENİŞLEMİŞ DETAY KUTUSU */
+    .gorev-detay {
+      display: none;
+      border-radius: 16px;
+      padding: 28px 32px;
+      margin-top: 16px;
+      animation: fadeIn .3s ease;
+    }
+    .gorev-detay.goster { display: block; }
+    @keyframes fadeIn {
+      from { opacity:0; transform: translateY(-8px); }
+      to   { opacity:1; transform: translateY(0); }
+    }
+    .gorev-detay h5 { font-weight: 800; font-size: 1.2rem; margin-bottom: 6px; }
+    .gorev-detay p  { font-size: .95rem; opacity: .85; margin-bottom: 16px; }
+    .kelime-chip {
+      display: inline-block;
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: .78rem;
+      font-weight: 600;
+      margin: 3px;
+      border: 1px solid;
+    }
+
+    /* FORM */
+    .card { border: none; border-radius: 16px; box-shadow: 0 2px 12px rgba(0,0,0,.07); }
+    .card-header { border-radius: 16px 16px 0 0 !important; font-weight: 700; font-size: 1rem; }
+    .form-label { font-weight: 600; font-size: .9rem; color: #374151; }
+    .form-control, .form-select {
+      border-radius: 10px; border: 1.5px solid #d1d5db;
+      padding: 10px 14px; font-size: .95rem;
+    }
+    .form-control:focus, .form-select:focus {
+      border-color: #2d6a9f; box-shadow: 0 0 0 3px rgba(45,106,159,.15);
+    }
+
+    /* NLP ÖNİZLEME */
+    #nlpOnizleme { display: none; border-radius: 12px; }
+    .skor-bar-wrap { height: 8px; background: #e5e7eb; border-radius: 4px; overflow: hidden; }
+    .skor-bar      { height: 8px; border-radius: 4px; transition: width .4s; }
+
+    .btn-primary-custom {
+      background: linear-gradient(135deg, #1a3a5c, #2d6a9f);
+      color: #fff; border: none; border-radius: 10px;
+      padding: 11px 28px; font-weight: 700; font-size: 1rem;
+      transition: all .2s;
+    }
+    .btn-primary-custom:hover { opacity: .9; transform: translateY(-1px); color:#fff; }
+
+    #basariEkrani { display: none; }
+    .basari-kart {
+      border-radius: 20px; padding: 40px;
+      background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+      border: 2px solid #7dd3fc; text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar navbar-dark" style="background: var(--primary);">
+  <div class="container">
+    <span class="navbar-brand">
+      <i class="bi bi-shield-fill-check me-2" style="color:#e63946;"></i>
+      Deprem Gönüllü Koordinasyon Sistemi
+    </span>
+    <div class="d-flex gap-2">
+      <a href="giris.html" class="btn btn-sm btn-outline-light">
+        <i class="bi bi-person me-1"></i>Gönüllü Girişi
+      </a>
+      <a href="admin.html" class="btn btn-sm btn-outline-light">
+        <i class="bi bi-lock me-1"></i>Yönetici Girişi
+      </a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="container text-center">
+    <h1><i class="bi bi-people-fill me-2"></i>Gönüllü Ol, Fark Yarat</h1>
+    <p class="mb-0">Sisteme kayıt olun — yapay zeka becerilerinizi analiz edip size en uygun görevi otomatik atar.</p>
+  </div>
+</div>
+
+<!-- GÖREV TANITIM -->
+<div class="container my-5">
+  <div class="text-center mb-4">
+    <h5 class="fw-bold text-secondary">Görev Alanları</h5>
+    <p class="text-muted" style="font-size:.9rem;">Detayları görmek için bir göreve tıklayın</p>
+  </div>
+
+  <!-- 5 küçük kart -->
+  <div class="row g-3 justify-content-center mb-3" id="gorevKartlar"></div>
+
+  <!-- Genişleyen detay kutusu -->
+  <div id="gorevDetayKutu" class="gorev-detay"></div>
+
+  <!-- KAYIT FORMU -->
+  <div class="row justify-content-center mt-5">
+    <div class="col-lg-7">
+
+      <!-- BAŞARI -->
+      <div id="basariEkrani">
+        <div class="basari-kart">
+          <div style="font-size:4rem;">✅</div>
+          <h3 class="fw-bold mt-3 mb-1">Kaydınız Alındı!</h3>
+          <p class="text-muted mb-3">Sistem becerilerinizi analiz etti ve size şu görevi atadı:</p>
+          <div id="basariGorev" class="gorev-badge fs-5 mb-4"></div>
+          <button class="btn btn-outline-secondary" onclick="tekrarKayit()">
+            <i class="bi bi-plus-circle me-1"></i>Yeni Kayıt
+          </button>
+        </div>
+      </div>
+
+      <!-- FORM -->
+      <div id="kayitForm">
+        <div class="card">
+          <div class="card-header bg-primary text-white p-3">
+            <i class="bi bi-person-plus me-2"></i>Gönüllü Kayıt Formu
+          </div>
+          <div class="card-body p-4">
+            <div id="alertBox" class="alert d-none"></div>
+            <div class="row g-3">
+              <div class="col-12">
+                <label class="form-label">Ad Soyad *</label>
+                <input type="text" id="ad_soyad" class="form-control" placeholder="Adınız Soyadınız" />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">E-posta *</label>
+                <input type="email" id="email" class="form-control" placeholder="ornek@mail.com" />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Telefon</label>
+                <input type="tel" id="tel" class="form-control" placeholder="05XX XXX XX XX" />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Şifre *</label>
+                <input type="password" id="sifre" class="form-control" placeholder="Şifrenizi belirleyin" />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Meslek</label>
+                <input type="text" id="meslek" class="form-control" placeholder="ör: Doktor, Şoför, Aşçı..." />
+              </div>
+              <div class="col-12">
+                <label class="form-label">
+                  Kendinizi Tanıtın
+                 
+                </label>
+                <textarea id="aciklama" class="form-control" rows="4"
+                  placeholder="Becerilerinizi, deneyimlerinizi anlatın... Sistem otomatik görev atayacak."></textarea>
+              </div>
+
+              <!-- NLP CANLI ÖNİZLEME -->
+              <div class="col-12">
+                <div id="nlpOnizleme" class="p-3 bg-light border">
+                  <div class="d-flex align-items-center mb-2">
+                    <span class="me-2">🤖</span>
+                    <strong style="font-size:.85rem; color:#374151;">NLP Anlık Analizi</strong>
+                  </div>
+                  <div class="mb-2">
+                    <span class="text-muted" style="font-size:.85rem;">Önerilen Görev: </span>
+                    <span id="nlpSonuc" class="gorev-badge"></span>
+                  </div>
+                  <div id="nlpSkorlar" class="row g-2"></div>
+                </div>
+              </div>
+
+              <div class="col-12 mt-2">
+                <button class="btn btn-primary-custom w-100" onclick="kayitOl()">
+                  <i class="bi bi-send me-2"></i>Kayıt Ol 
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer class="text-center text-muted py-4 mt-4" style="font-size:.85rem; border-top:1px solid #e5e7eb;">
+  Deprem Gönüllü Koordinasyon Sistemi &mdash; İstanbul Beykent Üniversitesi Bitirme Projesi 2026
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+const API = "http://localhost:5000/api";
+
+// ── GÖREV VERİLERİ ────────────────────────────────────────────────────────
+const GOREVLER = [
+  {
+    ikon: "🏥", ad: "Sağlık Destek", cls: "badge-saglik",
+    renk: "#fee2e2", kenarRenk: "#fca5a5", textRenk: "#991b1b",
+    aciklama: "Doktor, hemşire, eczacı ve ilkyardım bilgisine sahip gönüllüler afet bölgesinde tıbbi destek sağlar.",
+    kelimeler: ["doktor","hemşire","eczacı","hekim","acil servis","ilkyardım","tıp","cerrahi","hastane","ilaç","yoğun bakım","triaj","paramedik","ATT"]
+  },
+  {
+    ikon: "⛑️", ad: "Arama Kurtarma", cls: "badge-arama",
+    renk: "#fef3c7", kenarRenk: "#fcd34d", textRenk: "#92400e",
+    aciklama: "Enkaz altında kalan kişileri kurtarmak için fiziksel dayanıklılığı ve arama-kurtarma eğitimi olan gönüllüler.",
+    kelimeler: ["enkaz","kurtarma","itfaiye","dağcı","halatçı","drone","arama köpeği","AFAD","tahliye","vinç","fiziksel","dayanıklı"]
+  },
+  {
+    ikon: "🚛", ad: "Lojistik Destek", cls: "badge-lojistik",
+    renk: "#dbeafe", kenarRenk: "#93c5fd", textRenk: "#1e40af",
+    aciklama: "Yardım malzemelerinin taşınması, depolanması ve dağıtım koordinasyonu için araç kullanan ve lojistik bilen gönüllüler.",
+    kelimeler: ["şoför","kamyon","ehliyet","nakliye","depo","lojistik","forklift","kargo","sevkiyat","araç","taşıma","rota"]
+  },
+  {
+    ikon: "🍲", ad: "Beslenme Destek", cls: "badge-beslenme",
+    renk: "#d1fae5", kenarRenk: "#6ee7b7", textRenk: "#065f46",
+    aciklama: "Afetzedelere sıcak yemek hazırlamak, gıda paketlemek ve dağıtım yapmak için mutfak deneyimi olan gönüllüler.",
+    kelimeler: ["aşçı","şef","mutfak","yemek","gıda","fırın","aşevi","hijyen","erzak","pişirme"]
+  },
+  {
+    ikon: "🧠", ad: "Psikolojik Destek", cls: "badge-psikoloji",
+    renk: "#ede9fe", kenarRenk: "#c4b5fd", textRenk: "#5b21b6",
+    aciklama: "Afet travması yaşayan bireylere psikolojik ilk yardım, kriz müdahalesi ve ruh sağlığı desteği sunan uzmanlar.",
+    kelimeler: ["psikolog","terapist","travma","kriz","danışman","ruh sağlığı","sosyal hizmet","empati","debriefing","rehabilitasyon"]
+  },
+];
+
+const GOREV_CLASS = {
+  "Sağlık Destek":"badge-saglik","Arama Kurtarma":"badge-arama",
+  "Lojistik Destek":"badge-lojistik","Beslenme Destek":"badge-beslenme",
+  "Psikolojik Destek":"badge-psikoloji","Genel Destek":"badge-genel"
+};
+const GOREV_IKON = {
+  "Sağlık Destek":"🏥","Arama Kurtarma":"⛑️","Lojistik Destek":"🚛",
+  "Beslenme Destek":"🍲","Psikolojik Destek":"🧠","Genel Destek":"🤝"
+};
+
+// ── GÖREV KARTLARI RENDER ─────────────────────────────────────────────────
+let aktifKart = null;
+
+const kartlarEl = document.getElementById("gorevKartlar");
+GOREVLER.forEach((g, i) => {
+  kartlarEl.innerHTML += `
+    <div class="col-6 col-md-4 col-lg-2">
+      <div class="gorev-kart" id="kart-${i}"
+           style="border-color: transparent;"
+           onclick="kartTikla(${i})">
+        <div class="gorev-ikon">${g.ikon}</div>
+        <div class="gorev-badge ${g.cls} mb-1">${g.ad}</div>
+        <div class="ok-ikon"><i class="bi bi-chevron-down"></i></div>
+      </div>
+    </div>`;
+});
+
+function kartTikla(i) {
+  const g       = GOREVLER[i];
+  const kartEl  = document.getElementById("kart-" + i);
+  const detayEl = document.getElementById("gorevDetayKutu");
+
+  // Aynı karta tekrar tıklayınca kapat
+  if (aktifKart === i) {
+    kartEl.classList.remove("aktif");
+    kartEl.style.borderColor = "transparent";
+    detayEl.classList.remove("goster");
+    aktifKart = null;
+    return;
+  }
+
+  // Önceki aktif kartı sıfırla
+  if (aktifKart !== null) {
+    document.getElementById("kart-" + aktifKart).classList.remove("aktif");
+    document.getElementById("kart-" + aktifKart).style.borderColor = "transparent";
+  }
+
+  // Yeni kartı aktif yap
+  kartEl.classList.add("aktif");
+  kartEl.style.borderColor = g.kenarRenk;
+
+  // Detay kutusunu doldur
+  const kelimeHtml = g.kelimeler.map(k =>
+    `<span class="kelime-chip" style="background:${g.renk}; color:${g.textRenk}; border-color:${g.kenarRenk};">${k}</span>`
+  ).join("");
+
+  detayEl.style.background   = g.renk;
+  detayEl.style.border       = `2px solid ${g.kenarRenk}`;
+  detayEl.innerHTML = `
+    <div class="d-flex align-items-center mb-2 gap-3">
+      <span style="font-size:2.8rem;">${g.ikon}</span>
+      <div>
+        <h5 style="color:${g.textRenk}; margin-bottom:4px;">${g.ad}</h5>
+        <p style="color:${g.textRenk}; margin:0;">${g.aciklama}</p>
+      </div>
+    </div>
+    <hr style="border-color:${g.kenarRenk}; opacity:.4;">
+    <div style="font-size:.82rem; font-weight:700; color:${g.textRenk}; margin-bottom:8px;">
+      <i class="bi bi-people me-1"></i>Bu göreve kimler başvurabilir?
+    </div>
+    <div>${kelimeHtml}</div>`;
+
+  detayEl.classList.add("goster");
+
+  // Detay kutusuna scroll
+  setTimeout(() => {
+    detayEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, 100);
+
+  aktifKart = i;
+}
+
+// ── NLP CANLI ÖNİZLEME ────────────────────────────────────────────────────
+let nlpTimer = null;
+["meslek","aciklama"].forEach(id => {
+  document.getElementById(id).addEventListener("input", () => {
+    clearTimeout(nlpTimer);
+    nlpTimer = setTimeout(nlpOnizle, 450);
+  });
+});
+
+async function nlpOnizle() {
+  const meslek   = document.getElementById("meslek").value.trim();
+  const aciklama = document.getElementById("aciklama").value.trim();
+  if (!meslek && !aciklama) {
+    document.getElementById("nlpOnizleme").style.display = "none";
+    return;
+  }
+  try {
+    const res  = await fetch(`${API}/nlp-test`, {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ meslek, aciklama })
+    });
+    const data = await res.json();
+    const atanan  = data.atanan_gorev;
+    const cls     = GOREV_CLASS[atanan] || "badge-genel";
+    const sonucEl = document.getElementById("nlpSonuc");
+    sonucEl.className   = `gorev-badge ${cls}`;
+    sonucEl.textContent = `${GOREV_IKON[atanan]||"🤝"} ${atanan}`;
+
+    const skorlarEl = document.getElementById("nlpSkorlar");
+    skorlarEl.innerHTML = "";
+    const maxSkor = Math.max(...Object.values(data.detay).map(d => d.skor));
+    Object.entries(data.detay).forEach(([gorev, info]) => {
+      const pct      = maxSkor > 0 ? Math.round((info.skor / maxSkor) * 100) : 0;
+      const barColor = info.skor > 0 ? "#2d6a9f" : "#d1d5db";
+      skorlarEl.innerHTML += `
+        <div class="col-6">
+          <div style="font-size:.78rem; color:#374151; margin-bottom:3px;">
+            ${GOREV_IKON[gorev]||"🤝"} ${gorev}
+            <span class="text-muted">(${info.skor})</span>
+          </div>
+          <div class="skor-bar-wrap">
+            <div class="skor-bar" style="width:${pct}%; background:${barColor};"></div>
+          </div>
+        </div>`;
+    });
+    document.getElementById("nlpOnizleme").style.display = "block";
+  } catch(e) { console.warn("NLP önizleme başarısız:", e); }
+}
+
+// ── KAYIT ─────────────────────────────────────────────────────────────────
+async function kayitOl() {
+  const alertBox = document.getElementById("alertBox");
+  alertBox.className = "alert d-none";
+
+  const payload = {
+    ad_soyad: document.getElementById("ad_soyad").value.trim(),
+    email:    document.getElementById("email").value.trim(),
+    sifre:    document.getElementById("sifre").value.trim(),
+    tel:      document.getElementById("tel").value.trim(),
+    meslek:   document.getElementById("meslek").value.trim(),
+    aciklama: document.getElementById("aciklama").value.trim(),
+  };
+
+  if (!payload.ad_soyad || !payload.email || !payload.sifre) {
+  alertBox.className   = "alert alert-danger";
+  alertBox.textContent = "Ad Soyad, E-posta ve Şifre zorunludur.";
+  return;
+}
+
+  try {
+    const res  = await fetch(`${API}/kayit`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      alertBox.className   = "alert alert-danger";
+      alertBox.textContent = data.hata || "Kayıt sırasında hata oluştu.";
+      return;
+    }
+    const atanan        = data.atanan_gorev;
+    const cls           = GOREV_CLASS[atanan] || "badge-genel";
+    const basariGorevEl = document.getElementById("basariGorev");
+    basariGorevEl.className   = `gorev-badge ${cls} fs-5`;
+    basariGorevEl.textContent = `${GOREV_IKON[atanan]||"🤝"} ${atanan}`;
+    document.getElementById("kayitForm").style.display    = "none";
+    document.getElementById("basariEkrani").style.display = "block";
+  } catch(e) {
+    alertBox.className   = "alert alert-danger";
+    alertBox.textContent = "Sunucuya bağlanılamadı. Backend çalışıyor mu?";
+  }
+}
+
+function tekrarKayit() {
+  document.getElementById("kayitForm").style.display    = "block";
+  document.getElementById("basariEkrani").style.display = "none";
+  ["ad_soyad","email","sifre","tel","meslek","aciklama"].forEach(id =>
+    document.getElementById(id).value = ""
+  );
+  document.getElementById("nlpOnizleme").style.display = "none";
+}
+</script>
+</body>
+</html>

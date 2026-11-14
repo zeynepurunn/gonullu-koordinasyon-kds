@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gönüllü Paneli – Deprem Sistemi</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" />
+  <style>
+    :root { --primary: #1a3a5c; }
+    body { background: #f0f4f8; font-family: 'Segoe UI', sans-serif; }
+    .navbar-brand { font-weight: 800; }
+
+    .gorev-karti { border-radius: 20px; padding: 40px; text-align: center; border: 2px solid; }
+    .gorev-ikon  { font-size: 5rem; margin-bottom: 16px; }
+
+    .bilgi-satir {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 12px 16px; background: #f8fafc;
+      border-radius: 10px; margin-bottom: 10px;
+    }
+    .bilgi-satir .etiket { color: #94a3b8; font-size: .85rem; font-weight: 600; }
+    .bilgi-satir .deger  { color: #1e293b; font-size: .95rem; font-weight: 500; }
+
+    .kart { background: #fff; border-radius: 16px; padding: 28px; box-shadow: 0 1px 6px rgba(0,0,0,.07); margin-bottom: 20px; }
+    .kart h6 { font-weight: 700; color: #1e293b; margin-bottom: 16px; }
+
+    .saglik    { background: #fee2e2; border-color: #fca5a5; color: #991b1b; }
+    .arama     { background: #fef3c7; border-color: #fcd34d; color: #92400e; }
+    .lojistik  { background: #dbeafe; border-color: #93c5fd; color: #1e40af; }
+    .beslenme  { background: #d1fae5; border-color: #6ee7b7; color: #065f46; }
+    .psikoloji { background: #ede9fe; border-color: #c4b5fd; color: #5b21b6; }
+    .genel     { background: #f1f5f9; border-color: #cbd5e1; color: #475569; }
+
+    .form-control { border-radius: 10px; border: 1.5px solid #d1d5db; padding: 10px 14px; }
+    .form-control:focus { border-color: #2d6a9f; box-shadow: 0 0 0 3px rgba(45,106,159,.15); }
+    .form-label { font-weight: 600; font-size: .88rem; color: #374151; }
+    .btn-kaydet {
+      background: linear-gradient(135deg, #1a3a5c, #2d6a9f);
+      color: #fff; border: none; border-radius: 10px;
+      padding: 10px 28px; font-weight: 700; font-size: .95rem;
+      transition: all .2s;
+    }
+    .btn-kaydet:hover { opacity: .9; color: #fff; }
+
+    /* Sekme butonları */
+    .sekme-btn {
+      background: #f1f5f9; border: none; border-radius: 10px;
+      padding: 8px 18px; font-weight: 600; font-size: .88rem;
+      color: #475569; cursor: pointer; transition: all .2s;
+    }
+    .sekme-btn.aktif { background: #1a3a5c; color: #fff; }
+  </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar navbar-dark" style="background: var(--primary);">
+  <div class="container">
+    <span class="navbar-brand">
+      <i class="bi bi-shield-fill-check me-2" style="color:#e63946;"></i>
+      Deprem Gönüllü Sistemi
+    </span>
+    <div class="d-flex align-items-center gap-3">
+      <span class="text-white-50" style="font-size:.85rem;" id="navAd"></span>
+      <button class="btn btn-sm btn-outline-light" onclick="cikis()">
+        <i class="bi bi-box-arrow-right me-1"></i>Çıkış
+      </button>
+    </div>
+  </div>
+</nav>
+
+<div class="container py-5" style="max-width: 700px;">
+
+  <!-- GÖREV KARTI -->
+  <div id="gorevKarti" class="gorev-karti mb-4">
+    <div class="gorev-ikon" id="gorevIkon"></div>
+    <h2 class="fw-bold mb-2" id="gorevAdi"></h2>
+    <p class="mb-0" id="gorevAciklama"></p>
+  </div>
+
+  <!-- SEKMELER -->
+  <div class="d-flex gap-2 mb-4">
+    <button class="sekme-btn aktif" onclick="sekmeGoster('profil', this)">
+      <i class="bi bi-person me-1"></i>Profilim
+    </button>
+    <button class="sekme-btn" onclick="sekmeGoster('duzenle', this)">
+      <i class="bi bi-pencil me-1"></i>Profili Düzenle
+    </button>
+    <button class="sekme-btn" onclick="sekmeGoster('sifre', this)">
+      <i class="bi bi-key me-1"></i>Şifre Değiştir
+    </button>
+  </div>
+
+  <!-- PROFİL BİLGİLERİ SEKMESİ -->
+  <div id="sek-profil">
+    <div class="kart">
+      <h6><i class="bi bi-person me-2"></i>Profil Bilgilerim</h6>
+      <div id="profilBilgileri"></div>
+    </div>
+    <div class="kart">
+      <h6><i class="bi bi-info-circle me-2"></i>Görevim Hakkında</h6>
+      <p class="text-muted mb-0" id="gorevDetay" style="font-size:.95rem; line-height:1.7;"></p>
+    </div>
+    <div class="alert alert-info" style="border-radius: 14px;">
+      <i class="bi bi-telephone me-2"></i>
+      <strong>AFAD:</strong> 122 &nbsp;|&nbsp;
+      <strong>Kızılay:</strong> 0312 430 23 00 &nbsp;|&nbsp;
+      <strong>Acil:</strong> 112
+    </div>
+  </div>
+
+  <!-- PROFİL DÜZENLE SEKMESİ -->
+  <div id="sek-duzenle" style="display:none;">
+    <div class="kart">
+      <h6><i class="bi bi-pencil me-2"></i>Bilgilerimi Güncelle</h6>
+      <div id="duzenleAlert" class="alert d-none mb-3"></div>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label">Telefon</label>
+          <input type="tel" id="yeniTel" class="form-control" placeholder="05XX XXX XX XX" />
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Meslek</label>
+          <input type="text" id="yeniMeslek" class="form-control" placeholder="Mesleğiniz" />
+        </div>
+        <div class="col-12">
+          <label class="form-label">Kendinizi Tanıtın</label>
+          <textarea id="yeniAciklama" class="form-control" rows="3" placeholder="Becerileriniz, deneyimleriniz..."></textarea>
+        </div>
+        <div class="col-12">
+          <button class="btn-kaydet" onclick="profilGuncelle()">
+            <i class="bi bi-check-lg me-1"></i>Kaydet
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ŞİFRE DEĞİŞTİR SEKMESİ -->
+  <div id="sek-sifre" style="display:none;">
+    <div class="kart">
+      <h6><i class="bi bi-key me-2"></i>Şifre Değiştir</h6>
+      <div id="sifreAlert" class="alert d-none mb-3"></div>
+      <div class="row g-3">
+        <div class="col-12">
+          <label class="form-label">Mevcut Şifre</label>
+          <input type="password" id="mevcutSifre" class="form-control" placeholder="Mevcut şifreniz" />
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Yeni Şifre</label>
+          <input type="password" id="yeniSifre" class="form-control" placeholder="Yeni şifre" />
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Yeni Şifre Tekrar</label>
+          <input type="password" id="yeniSifreTekrar" class="form-control" placeholder="Yeni şifre tekrar" />
+        </div>
+        <div class="col-12">
+          <button class="btn-kaydet" onclick="sifreDegistir()">
+            <i class="bi bi-check-lg me-1"></i>Şifreyi Güncelle
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const API = "http://localhost:5000/api";
+
+  const GOREV_IKON = {
+    "Sağlık Destek":"🏥","Arama Kurtarma":"⛑️","Lojistik Destek":"🚛",
+    "Beslenme Destek":"🍲","Psikolojik Destek":"🧠","Genel Destek":"🤝"
+  };
+  const GOREV_CSS = {
+    "Sağlık Destek":"saglik","Arama Kurtarma":"arama","Lojistik Destek":"lojistik",
+    "Beslenme Destek":"beslenme","Psikolojik Destek":"psikoloji","Genel Destek":"genel"
+  };
+  const GOREV_DETAY = {
+    "Sağlık Destek":    "Afet bölgesinde tıbbi müdahale, ilkyardım ve hasta nakli görevlerini üstleneceksiniz. Koordinasyon için AFAD sağlık birimi ile iletişimde kalın.",
+    "Arama Kurtarma":   "Enkaz altındaki kişileri tespit etmek ve kurtarmak için ekip halinde çalışacaksınız. Güvenlik ekipmanlarınızı eksiksiz kullanın.",
+    "Lojistik Destek":  "Yardım malzemelerinin depolardan afet bölgesine taşınması ve dağıtım noktalarının yönetimi sizin sorumluluğunuzda olacak.",
+    "Beslenme Destek":  "Afetzedelere günlük sıcak yemek hazırlamak, paketlemek ve dağıtım noktalarına ulaştırmak temel göreviniz.",
+    "Psikolojik Destek":"Travma yaşayan bireylere psikolojik ilk yardım sunacak, kriz müdahalesi yapacak ve destek grupları oluşturacaksınız.",
+    "Genel Destek":     "İhtiyaç duyulan alanlarda esnek destek sağlayacaksınız. Koordinatörlerinizin yönlendirmesiyle en uygun göreve atanacaksınız."
+  };
+
+  // Giriş kontrolü
+  let gonullu = JSON.parse(localStorage.getItem("gonullu") || "null");
+  if (!gonullu) { window.location.href = "giris.html"; }
+
+  document.getElementById("navAd").textContent = gonullu.ad_soyad;
+
+  // Sekme
+  function sekmeGoster(id, btn) {
+    ["profil","duzenle","sifre"].forEach(s => {
+      document.getElementById("sek-" + s).style.display = "none";
+    });
+    document.querySelectorAll(".sekme-btn").forEach(b => b.classList.remove("aktif"));
+    document.getElementById("sek-" + id).style.display = "block";
+    btn.classList.add("aktif");
+
+    // Düzenle sekmesi açılınca mevcut bilgileri doldur
+    if (id === "duzenle") {
+      document.getElementById("yeniTel").value      = gonullu.tel || "";
+      document.getElementById("yeniMeslek").value   = gonullu.meslek || "";
+      document.getElementById("yeniAciklama").value = gonullu.aciklama || "";
+    }
+  }
+
+  // Güncel veriyi çek
+  async function yukle() {
+    try {
+      const res  = await fetch(`${API}/kullanici/${gonullu.id}`);
+      const data = await res.json();
+      gonullu = { ...gonullu, ...data };
+      localStorage.setItem("gonullu", JSON.stringify(gonullu));
+      render(data);
+    } catch(e) { render(gonullu); }
+  }
+
+  function render(d) {
+    const gorev = d.atanan_gorev || "Genel Destek";
+    const css   = GOREV_CSS[gorev] || "genel";
+
+    document.getElementById("gorevKarti").className      = `gorev-karti mb-4 ${css}`;
+    document.getElementById("gorevIkon").textContent     = GOREV_IKON[gorev] || "🤝";
+    document.getElementById("gorevAdi").textContent      = gorev;
+    document.getElementById("gorevAciklama").textContent = "Size atanan görev alanı";
+    document.getElementById("gorevDetay").textContent    = GOREV_DETAY[gorev] || "";
+
+    const bilgiler = [
+      ["Ad Soyad",     d.ad_soyad],
+      ["E-posta",      d.email],
+      ["Telefon",      d.tel || "—"],
+      ["Meslek",       d.meslek || "—"],
+      ["Kayıt Tarihi", (d.kayit_tarihi || "").substring(0,16)],
+    ];
+    document.getElementById("profilBilgileri").innerHTML = bilgiler.map(([e,v]) => `
+      <div class="bilgi-satir">
+        <span class="etiket">${e}</span>
+        <span class="deger">${v}</span>
+      </div>`).join("");
+  }
+
+  // Profil güncelle
+  async function profilGuncelle() {
+    const alertEl = document.getElementById("duzenleAlert");
+    alertEl.className = "alert d-none";
+
+    const payload = {
+      tel:      document.getElementById("yeniTel").value.trim(),
+      meslek:   document.getElementById("yeniMeslek").value.trim(),
+      aciklama: document.getElementById("yeniAciklama").value.trim(),
+    };
+
+    try {
+      const res  = await fetch(`${API}/kullanici/${gonullu.id}/guncelle`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alertEl.className   = "alert alert-danger";
+        alertEl.textContent = data.hata;
+        return;
+      }
+      alertEl.className   = "alert alert-success";
+      alertEl.textContent = "✅ Profiliniz güncellendi!";
+      yukle();
+    } catch(e) {
+      alertEl.className   = "alert alert-danger";
+      alertEl.textContent = "Sunucuya bağlanılamadı.";
+    }
+  }
+
+  // Şifre değiştir
+  async function sifreDegistir() {
+    const alertEl = document.getElementById("sifreAlert");
+    alertEl.className = "alert d-none";
+
+    const mevcutSifre    = document.getElementById("mevcutSifre").value;
+    const yeniSifre      = document.getElementById("yeniSifre").value;
+    const yeniSifreTekrar= document.getElementById("yeniSifreTekrar").value;
+
+    if (!mevcutSifre || !yeniSifre || !yeniSifreTekrar) {
+      alertEl.className   = "alert alert-danger";
+      alertEl.textContent = "Tüm alanları doldurun.";
+      return;
+    }
+    if (yeniSifre !== yeniSifreTekrar) {
+      alertEl.className   = "alert alert-danger";
+      alertEl.textContent = "Yeni şifreler eşleşmiyor.";
+      return;
+    }
+    if (yeniSifre.length < 4) {
+      alertEl.className   = "alert alert-danger";
+      alertEl.textContent = "Şifre en az 4 karakter olmalı.";
+      return;
+    }
+
+    // Önce mevcut şifreyi doğrula
+    try {
+      const dogrula = await fetch(`${API}/kullanici-giris`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: gonullu.email, sifre: mevcutSifre })
+      });
+      if (!dogrula.ok) {
+        alertEl.className   = "alert alert-danger";
+        alertEl.textContent = "Mevcut şifre hatalı.";
+        return;
+      }
+
+      // Şifreyi güncelle
+      const res = await fetch(`${API}/kullanici/${gonullu.id}/guncelle`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sifre: yeniSifre })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alertEl.className   = "alert alert-danger";
+        alertEl.textContent = data.hata;
+        return;
+      }
+      alertEl.className   = "alert alert-success";
+      alertEl.textContent = "✅ Şifreniz başarıyla güncellendi!";
+      ["mevcutSifre","yeniSifre","yeniSifreTekrar"].forEach(id =>
+        document.getElementById(id).value = ""
+      );
+    } catch(e) {
+      alertEl.className   = "alert alert-danger";
+      alertEl.textContent = "Sunucuya bağlanılamadı.";
+    }
+  }
+
+  function cikis() {
+    localStorage.removeItem("gonullu");
+    window.location.href = "giris.html";
+  }
+
+  yukle();
+</script>
+</body>
+</html>

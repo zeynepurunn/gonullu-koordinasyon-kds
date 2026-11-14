@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Yönetici Paneli – Deprem Gönüllü Sistemi</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" />
+  <style>
+    :root { --primary:#1a3a5c; --accent:#e63946; }
+    body { background:#f0f4f8; font-family:'Segoe UI',sans-serif; }
+
+    /* LOGIN */
+    #loginWrap {
+      min-height:100vh; display:flex; align-items:center; justify-content:center;
+      background:linear-gradient(135deg,var(--primary) 0%,#2d6a9f 100%);
+    }
+    .login-kart { background:#fff; border-radius:20px; padding:44px 40px; width:100%; max-width:420px; box-shadow:0 8px 32px rgba(0,0,0,.18); }
+    .login-kart h2 { font-weight:800; color:var(--primary); }
+
+    /* PANEL */
+    #panelWrap { display:none; }
+    .sidebar {
+      width:220px; min-height:100vh; background:var(--primary);
+      padding:24px 0; position:fixed; top:0; left:0;
+    }
+    .sidebar-logo { color:#fff; font-weight:800; font-size:1rem; padding:0 20px 24px; border-bottom:1px solid rgba(255,255,255,.12); }
+    .sidebar a {
+      display:flex; align-items:center; gap:10px;
+      color:rgba(255,255,255,.75); text-decoration:none;
+      padding:12px 20px; font-size:.9rem; transition:all .2s;
+    }
+    .sidebar a:hover, .sidebar a.active { background:rgba(255,255,255,.1); color:#fff; }
+    .sidebar a i { font-size:1.1rem; }
+    .main-area { margin-left:220px; padding:32px 36px; }
+
+    /* TOPBAR */
+    .topbar {
+      background:#fff; border-radius:14px;
+      padding:14px 24px; display:flex; justify-content:space-between; align-items:center;
+      box-shadow:0 1px 4px rgba(0,0,0,.07); margin-bottom:28px;
+    }
+    .topbar h5 { margin:0; font-weight:700; color:var(--primary); }
+
+    /* KARTLAR */
+    .kart { background:#fff; border-radius:14px; padding:24px; box-shadow:0 1px 6px rgba(0,0,0,.07); }
+    .stat-kart { border-radius:14px; padding:20px 24px; color:#fff; }
+
+    /* GÖREV BADGE */
+    .badge-saglik    { background:#fee2e2; color:#991b1b; }
+    .badge-arama     { background:#fef3c7; color:#92400e; }
+    .badge-lojistik  { background:#dbeafe; color:#1e40af; }
+    .badge-beslenme  { background:#d1fae5; color:#065f46; }
+    .badge-psikoloji { background:#ede9fe; color:#5b21b6; }
+    .badge-genel     { background:#f1f5f9; color:#475569; }
+    .gorev-badge { border-radius:20px; padding:3px 12px; font-weight:600; font-size:.8rem; display:inline-block; }
+
+    /* TABLO */
+    .tablo th { font-size:.78rem; font-weight:700; color:#6b7280; text-transform:uppercase; background:#f9fafb; }
+    .tablo td { vertical-align:middle; font-size:.9rem; }
+    .tablo tr:hover { background:#f9fafb; }
+
+    /* SEKMELER */
+    .sekme { display:none; }
+    .sekme.aktif { display:block; }
+
+    /* NLP test */
+    .skor-bar-wrap { height:8px; background:#e5e7eb; border-radius:4px; overflow:hidden; }
+    .skor-bar      { height:8px; border-radius:4px; transition:width .4s; background:#2d6a9f; }
+
+    .form-control, .form-select { border-radius:9px; }
+    .btn-prim { background:linear-gradient(135deg,var(--primary),#2d6a9f); color:#fff; border:none; border-radius:9px; font-weight:700; }
+    .btn-prim:hover { opacity:.9; color:#fff; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<!-- ────────── GİRİŞ ────────── -->
+<div id="loginWrap">
+  <div class="login-kart">
+    <div class="text-center mb-4">
+      <div style="font-size:2.8rem;">🛡️</div>
+      <h2 class="mt-2">Yönetici Girişi</h2>
+      <p class="text-muted" style="font-size:.9rem;">Deprem Gönüllü Koordinasyon Sistemi</p>
+    </div>
+    <div id="loginAlert" class="alert d-none"></div>
+    <div class="mb-3">
+      <label class="form-label fw-semibold">E-posta</label>
+      <input type="email" id="loginEmail" class="form-control" value="admin@deprem.gov.tr" />
+    </div>
+    <div class="mb-4">
+      <label class="form-label fw-semibold">Şifre</label>
+      <input type="password" id="loginSifre" class="form-control" value="admin123" />
+    </div>
+    <button class="btn btn-prim w-100 py-2" onclick="girisYap()">
+      <i class="bi bi-box-arrow-in-right me-2"></i>Giriş Yap
+    </button>
+    <p class="text-center mt-3 mb-0">
+      <a href="index.html" class="text-muted text-decoration-none" style="font-size:.85rem;">
+        <i class="bi bi-arrow-left me-1"></i>Gönüllü Kayıt Sayfası
+      </a>
+    </p>
+  </div>
+</div>
+
+<!-- ────────── PANEL ────────── -->
+<div id="panelWrap">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      <i class="bi bi-shield-fill-check me-2" style="color:#e63946;"></i>
+      Admin Paneli
+    </div>
+    <a href="#" class="active" onclick="sekmeGoster('dashboard', this)"><i class="bi bi-grid"></i>Dashboard</a>
+    <a href="#" onclick="sekmeGoster('gonulluler', this)"><i class="bi bi-people"></i>Gönüllüler</a>
+    <a href="#" onclick="sekmeGoster('gorevler', this)"><i class="bi bi-list-task"></i>Görevler</a>
+    <a href="#" onclick="sekmeGoster('nlpTest', this)"><i class="bi bi-cpu"></i>NLP Test</a>
+    <div style="position:absolute;bottom:20px;left:0;right:0;padding:0 20px;">
+      <button class="btn btn-sm btn-outline-light w-100" onclick="cikis()">
+        <i class="bi bi-box-arrow-right me-1"></i>Çıkış
+      </button>
+    </div>
+  </div>
+
+  <!-- Ana Alan -->
+  <div class="main-area">
+
+    <!-- Topbar -->
+    <div class="topbar">
+      <h5 id="sekmeBaslik"><i class="bi bi-grid me-2"></i>Dashboard</h5>
+      <div>
+        <span class="text-muted me-2" style="font-size:.85rem;">Hoşgeldiniz,</span>
+        <strong id="adminAd" style="color:var(--primary);"></strong>
+      </div>
+    </div>
+
+    <!-- DASHBOARD SEKMESİ -->
+    <div id="sek-dashboard" class="sekme aktif">
+      <!-- İstatistik Kartları -->
+      <div class="row g-3 mb-4" id="statKartlar"></div>
+      <!-- Grafikler -->
+      <div class="row g-3 mt-1">
+        <div class="col-md-5">
+          <div class="kart h-100">
+            <h6 class="fw-bold mb-3">🥧 Görev Dağılımı</h6>
+            <canvas id="pastaGrafik" height="260"></canvas>
+          </div>
+        </div>
+        <div class="col-md-7">
+          <div class="kart h-100">
+            <h6 class="fw-bold mb-3">📊 Gönüllü Sayısı (Göreve Göre)</h6>
+            <canvas id="cubukGrafik" height="260"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GÖNÜLLÜLER SEKMESİ -->
+    <div id="sek-gonulluler" class="sekme">
+      <div class="kart">
+        <!-- Arama + Filtre -->
+        <div class="row g-2 mb-3">
+          <div class="col-md-6">
+            <input type="text" id="aramaInput" class="form-control" placeholder="🔍 Ad, e-posta, meslek ara..." oninput="gonulluFiltrele()" />
+          </div>
+          <div class="col-md-4">
+            <select id="gorevFiltre" class="form-select" onchange="gonulluFiltrele()">
+              <option value="">Tüm Görevler</option>
+              <option>Sağlık Destek</option>
+              <option>Arama Kurtarma</option>
+              <option>Lojistik Destek</option>
+              <option>Beslenme Destek</option>
+              <option>Psikolojik Destek</option>
+              <option>Genel Destek</option>
+            </select>
+          </div>
+          <div class="col-md-2">
+            <button class="btn btn-prim w-100" onclick="gonulluYukle()">
+              <i class="bi bi-arrow-clockwise"></i>
+            </button>
+          </div>
+        </div>
+        <!-- Tablo -->
+        <div class="table-responsive">
+          <table class="table tablo">
+            <thead>
+              <tr>
+                <th>#</th><th>Ad Soyad</th><th>E-posta</th>
+                <th>Telefon</th><th>Meslek</th><th>Atanan Görev</th>
+                <th>Kayıt Tarihi</th><th>İşlem</th>
+              </tr>
+            </thead>
+            <tbody id="gonulluTablo"></tbody>
+          </table>
+        </div>
+        <div id="gonulluSayac" class="text-muted" style="font-size:.85rem;"></div>
+      </div>
+    </div>
+
+    <!-- GÖREVLER SEKMESİ -->
+    <div id="sek-gorevler" class="sekme">
+      <div class="row g-3" id="gorevKartlar"></div>
+    </div>
+
+    <!-- NLP TEST SEKMESİ -->
+    <div id="sek-nlpTest" class="sekme">
+      <div class="kart" style="max-width:640px;">
+        <h6 class="fw-bold mb-1">🤖 NLP Görev Atama Testi</h6>
+        <p class="text-muted mb-3" style="font-size:.88rem;">Meslek ve açıklama girin, NLP sisteminin nasıl çalıştığını görün.</p>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Meslek</label>
+          <input type="text" id="nlpMeslek" class="form-control" placeholder="ör: Doktor, Şoför, Aşçı..." />
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Açıklama</label>
+          <textarea id="nlpAciklama" class="form-control" rows="4" placeholder="Beceriler, deneyimler..."></textarea>
+        </div>
+        <button class="btn btn-prim px-4 mb-3" onclick="nlpTestYap()">
+          <i class="bi bi-lightning me-1"></i>Analiz Et
+        </button>
+        <div id="nlpSonucAlani" class="d-none">
+          <hr />
+          <div class="mb-3">
+            <span class="text-muted">Atanan Görev: </span>
+            <span id="nlpSonucBadge" class="gorev-badge fs-6 ms-1"></span>
+          </div>
+          <div class="row g-2" id="nlpSkorDetay"></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /main-area -->
+</div><!-- /panelWrap -->
+
+<!-- GÖREV GÜNCELLE MODAL -->
+<div class="modal fade" id="gorevModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content" style="border-radius:16px;">
+      <div class="modal-header">
+        <h6 class="modal-title fw-bold">✏️ Görev Güncelle</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p class="text-muted mb-3" id="modalGonulluAd"></p>
+        <label class="form-label fw-semibold">Yeni Görev</label>
+        <select id="modalGorevSecim" class="form-select">
+          <option>Sağlık Destek</option>
+          <option>Arama Kurtarma</option>
+          <option>Lojistik Destek</option>
+          <option>Beslenme Destek</option>
+          <option>Psikolojik Destek</option>
+          <option>Genel Destek</option>
+        </select>
+        <input type="hidden" id="modalVid" />
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">İptal</button>
+        <button class="btn btn-prim btn-sm px-4" onclick="gorevGuncelle()">Kaydet</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+const API = "http://localhost:5000/api";
+let tumGonulluler = [];
+
+const GOREV_CLASS = {
+  "Sağlık Destek":"badge-saglik","Arama Kurtarma":"badge-arama",
+  "Lojistik Destek":"badge-lojistik","Beslenme Destek":"badge-beslenme",
+  "Psikolojik Destek":"badge-psikoloji","Genel Destek":"badge-genel"
+};
+const GOREV_IKON = {
+  "Sağlık Destek":"🏥","Arama Kurtarma":"⛑️","Lojistik Destek":"🚛",
+  "Beslenme Destek":"🍲","Psikolojik Destek":"🧠","Genel Destek":"🤝"
+};
+const STAT_RENK = ["#2563eb","#dc2626","#16a34a","#d97706","#7c3aed","#475569"];
+
+// ── GİRİŞ ─────────────────────────────────────────────────────────────────
+async function girisYap() {
+  const alertEl = document.getElementById("loginAlert");
+  alertEl.className = "alert d-none";
+  try {
+    const res  = await fetch(`${API}/admin-giris`, {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({
+        email:  document.getElementById("loginEmail").value,
+        sifre:  document.getElementById("loginSifre").value
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      alertEl.className = "alert alert-danger";
+      alertEl.textContent = data.hata;
+      return;
+    }
+    document.getElementById("adminAd").textContent = data.ad;
+    document.getElementById("loginWrap").style.display  = "none";
+    document.getElementById("panelWrap").style.display  = "block";
+    panelYukle();
+  } catch(e) {
+    alertEl.className = "alert alert-danger";
+    alertEl.textContent = "Sunucuya bağlanılamadı.";
+  }
+}
+
+function cikis() {
+  document.getElementById("loginWrap").style.display  = "flex";
+  document.getElementById("panelWrap").style.display  = "none";
+}
+
+// ── SEKME ──────────────────────────────────────────────────────────────────
+function sekmeGoster(id, link) {
+  document.querySelectorAll(".sekme").forEach(s => s.classList.remove("aktif"));
+  document.querySelectorAll(".sidebar a").forEach(a => a.classList.remove("active"));
+  document.getElementById("sek-"+id).classList.add("aktif");
+  link.classList.add("active");
+
+  const basliklar = {
+    dashboard:"Dashboard", gonulluler:"Gönüllüler",
+    gorevler:"Görevler", nlpTest:"NLP Test"
+  };
+  const ikonlar = {
+    dashboard:"bi-grid", gonulluler:"bi-people",
+    gorevler:"bi-list-task", nlpTest:"bi-cpu"
+  };
+  document.getElementById("sekmeBaslik").innerHTML =
+    `<i class="bi ${ikonlar[id]} me-2"></i>${basliklar[id]}`;
+
+  if (id === "gonulluler") gonulluYukle();
+  if (id === "gorevler")   gorevleriYukle();
+}
+
+// ── PANEL YÜKLEMESİ ────────────────────────────────────────────────────────
+async function panelYukle() {
+  await Promise.all([dashboardYukle(), gonulluYukle()]);
+}
+
+// ── DASHBOARD ──────────────────────────────────────────────────────────────
+let pastaChart = null;
+let cubukChart = null;
+
+async function dashboardYukle() {
+  const res  = await fetch(`${API}/istatistik`);
+  const data = await res.json();
+
+  // Stat kartları
+  const sk = document.getElementById("statKartlar");
+  sk.innerHTML = `
+    <div class="col-md-3">
+      <div class="stat-kart" style="background:linear-gradient(135deg,#1a3a5c,#2d6a9f);">
+        <div style="font-size:2rem; margin-bottom:6px;">👥</div>
+        <div style="font-size:2.2rem; font-weight:800;">${data.toplam_gonullu}</div>
+        <div style="opacity:.8; font-size:.9rem;">Toplam Gönüllü</div>
+      </div>
+    </div>`;
+
+  data.gorev_dagilimi.forEach((item, i) => {
+    sk.innerHTML += `
+      <div class="col-md-3">
+        <div class="stat-kart" style="background:linear-gradient(135deg,${STAT_RENK[i]||'#475569'},${STAT_RENK[i]||'#475569'}99);">
+          <div style="font-size:2rem; margin-bottom:6px;">${GOREV_IKON[item.atanan_gorev]||"🤝"}</div>
+          <div style="font-size:2.2rem; font-weight:800;">${item.sayi}</div>
+          <div style="opacity:.8; font-size:.85rem;">${item.atanan_gorev}</div>
+        </div>
+      </div>`;
+  });
+
+  // Grafik verileri
+  const etiketler = data.gorev_dagilimi.map(d => d.atanan_gorev);
+  const sayilar   = data.gorev_dagilimi.map(d => d.sayi);
+  const renkler   = data.gorev_dagilimi.map((_, i) => STAT_RENK[i] || "#475569");
+
+  // Pasta Grafik
+  if (pastaChart) pastaChart.destroy();
+  pastaChart = new Chart(document.getElementById("pastaGrafik"), {
+    type: "doughnut",
+    data: {
+      labels: etiketler,
+      datasets: [{
+        data: sayilar,
+        backgroundColor: renkler,
+        borderWidth: 2,
+        borderColor: "#fff"
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: {
+          position: "bottom",
+          labels: { font: { size: 11 }, padding: 12 }
+        }
+      }
+    }
+  });
+
+  // Çubuk Grafik
+  if (cubukChart) cubukChart.destroy();
+  cubukChart = new Chart(document.getElementById("cubukGrafik"), {
+    type: "bar",
+    data: {
+      labels: etiketler,
+      datasets: [{
+        label: "Gönüllü Sayısı",
+        data: sayilar,
+        backgroundColor: renkler,
+        borderRadius: 8,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: { stepSize: 1 },
+          grid: { color: "#f1f5f9" }
+        },
+        x: {
+          grid: { display: false },
+          ticks: { font: { size: 11 } }
+        }
+      }
+    }
+  });
+}
+
+// ── GÖNÜLLÜLER ─────────────────────────────────────────────────────────────
+async function gonulluYukle() {
+  const res  = await fetch(`${API}/gonulluler`);
+  tumGonulluler = await res.json();
+  gonulluFiltrele();
+}
+
+function gonulluFiltrele() {
+  const ara   = document.getElementById("aramaInput").value.toLowerCase();
+  const filtre= document.getElementById("gorevFiltre").value;
+  const sonuc = tumGonulluler.filter(g =>
+    (!ara || g.ad_soyad?.toLowerCase().includes(ara) ||
+             g.email?.toLowerCase().includes(ara)    ||
+             g.meslek?.toLowerCase().includes(ara))
+    && (!filtre || g.atanan_gorev === filtre)
+  );
+  tabloRender(sonuc);
+}
+
+function tabloRender(liste) {
+  const tbody = document.getElementById("gonulluTablo");
+  const sayac = document.getElementById("gonulluSayac");
+  tbody.innerHTML = "";
+  if (!liste.length) {
+    tbody.innerHTML = `<tr><td colspan="8" class="text-center text-muted py-4">Kayıt bulunamadı.</td></tr>`;
+    sayac.textContent = "";
+    return;
+  }
+  liste.forEach(g => {
+    const cls = GOREV_CLASS[g.atanan_gorev] || "badge-genel";
+    tbody.innerHTML += `
+      <tr>
+        <td class="text-muted">${g.id}</td>
+        <td class="fw-semibold">${g.ad_soyad}</td>
+        <td>${g.email}</td>
+        <td>${g.tel || "—"}</td>
+        <td>${g.meslek || "—"}</td>
+        <td><span class="gorev-badge ${cls}">${GOREV_IKON[g.atanan_gorev]||"🤝"} ${g.atanan_gorev||"Genel Destek"}</span></td>
+        <td class="text-muted" style="font-size:.82rem;">${(g.kayit_tarihi||"").substring(0,16)}</td>
+        <td>
+          <button class="btn btn-sm btn-outline-primary" style="border-radius:8px;"
+            onclick='modalAc(${g.id}, "${g.ad_soyad}", "${g.atanan_gorev||"Genel Destek"}")'>
+            <i class="bi bi-pencil"></i>
+          </button>
+        </td>
+      </tr>`;
+  });
+  sayac.textContent = `${liste.length} gönüllü gösteriliyor`;
+}
+
+// ── GÖREVLER ───────────────────────────────────────────────────────────────
+async function gorevleriYukle() {
+  const res  = await fetch(`${API}/gorevler`);
+  const data = await res.json();
+  const el   = document.getElementById("gorevKartlar");
+  el.innerHTML = "";
+  data.forEach(t => {
+    const cls = GOREV_CLASS[t.gorev_adi] || "badge-genel";
+    el.innerHTML += `
+      <div class="col-md-4">
+        <div class="kart text-center">
+          <div style="font-size:2.5rem; margin-bottom:12px;">${GOREV_IKON[t.gorev_adi]||"🤝"}</div>
+          <div class="gorev-badge ${cls} mb-2">${t.gorev_adi}</div>
+          <p class="text-muted mb-3" style="font-size:.85rem;">${t.aciklama||""}</p>
+          <div style="font-size:2rem; font-weight:800; color:#1a3a5c;">${t.gonullu_sayisi}</div>
+          <div class="text-muted" style="font-size:.82rem;">gönüllü atandı</div>
+        </div>
+      </div>`;
+  });
+}
+
+// ── GÖREV GÜNCELLE MODAL ───────────────────────────────────────────────────
+function modalAc(vid, adSoyad, mevcutGorev) {
+  document.getElementById("modalVid").value         = vid;
+  document.getElementById("modalGonulluAd").textContent = adSoyad;
+  document.getElementById("modalGorevSecim").value  = mevcutGorev;
+  new bootstrap.Modal(document.getElementById("gorevModal")).show();
+}
+
+
+  function sifreModalAc(vid, adSoyad, email) {
+    document.getElementById("sifreModalAd").textContent = adSoyad + " — " + email;
+    document.getElementById("sifreModalEmail").value    = email;
+    document.getElementById("sifreModalYeniSifre").value = "1234";
+    document.getElementById("sifreModalAlert").className = "alert d-none";
+    new bootstrap.Modal(document.getElementById("sifreModal")).show();
+  }
+
+  async function sifreSifirla() {
+    const alertEl   = document.getElementById("sifreModalAlert");
+    const email     = document.getElementById("sifreModalEmail").value;
+    const yeniSifre = document.getElementById("sifreModalYeniSifre").value;
+
+    if (!yeniSifre || yeniSifre.length < 4) {
+      alertEl.className   = "alert alert-danger";
+      alertEl.textContent = "Şifre en az 4 karakter olmalı.";
+      return;
+    }
+
+    const res  = await fetch(`${API}/admin/sifre-sifirla`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, yeni_sifre: yeniSifre })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      alertEl.className   = "alert alert-danger";
+      alertEl.textContent = data.hata;
+      return;
+    }
+    bootstrap.Modal.getInstance(document.getElementById("sifreModal")).hide();
+    mesaj = "✅ " + data.mesaj;
+    yukle();
+  }
+
+  async function gorevGuncelle() {
+  const vid   = document.getElementById("modalVid").value;
+  const gorev = document.getElementById("modalGorevSecim").value;
+  await fetch(`${API}/gonullu/${vid}/gorev-guncelle`, {
+    method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({ gorev_adi: gorev })
+  });
+  bootstrap.Modal.getInstance(document.getElementById("gorevModal")).hide();
+  gonulluYukle();
+  dashboardYukle();
+}
+
+// ── NLP TEST ──────────────────────────────────────────────────────────────
+async function nlpTestYap() {
+  const meslek   = document.getElementById("nlpMeslek").value;
+  const aciklama = document.getElementById("nlpAciklama").value;
+  const res      = await fetch(`${API}/nlp-test`, {
+    method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({ meslek, aciklama })
+  });
+  const data = await res.json();
+
+  const atanan = data.atanan_gorev;
+  const badgeEl = document.getElementById("nlpSonucBadge");
+  badgeEl.className = `gorev-badge ${GOREV_CLASS[atanan]||"badge-genel"} fs-6`;
+  badgeEl.textContent = `${GOREV_IKON[atanan]||"🤝"} ${atanan}`;
+
+  const detayEl = document.getElementById("nlpSkorDetay");
+  detayEl.innerHTML = "";
+  const maxSkor = Math.max(...Object.values(data.detay).map(d=>d.skor), 1);
+  Object.entries(data.detay).forEach(([gorev, info]) => {
+    const pct = Math.round((info.skor/maxSkor)*100);
+    detayEl.innerHTML += `
+      <div class="col-md-6">
+        <div class="p-2 rounded" style="background:#f8fafc; border:1px solid #e5e7eb;">
+          <div class="d-flex justify-content-between mb-1">
+            <span style="font-size:.82rem; font-weight:600;">${GOREV_IKON[gorev]||"🤝"} ${gorev}</span>
+            <span class="text-muted" style="font-size:.82rem;">${info.skor}</span>
+          </div>
+          <div class="skor-bar-wrap">
+            <div class="skor-bar" style="width:${pct}%; background:${info.skor>0?"#2563eb":"#d1d5db"};"></div>
+          </div>
+          ${info.eslesen.length ? `<div class="mt-1" style="font-size:.73rem; color:#6b7280;">Eşleşen: ${info.eslesen.join(", ")}</div>` : ""}
+        </div>
+      </div>`;
+  });
+
+  document.getElementById("nlpSonucAlani").classList.remove("d-none");
+}
+</script>
+
+<!-- ŞİFRE SIFIRLA MODAL -->
+<div class="modal fade" id="sifreModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content" style="border-radius:16px;">
+      <div class="modal-header">
+        <h6 class="modal-title fw-bold">🔑 Şifre Sıfırla</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p class="text-muted mb-3" id="sifreModalAd"></p>
+        <div id="sifreModalAlert" class="alert d-none mb-3"></div>
+        <label class="form-label fw-semibold">Yeni Şifre</label>
+        <input type="text" id="sifreModalYeniSifre" class="form-control" placeholder="En az 4 karakter" value="1234" />
+        <input type="hidden" id="sifreModalEmail" />
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">İptal</button>
+        <button class="btn btn-warning btn-sm px-4 fw-bold" onclick="sifreSifirla()">Sıfırla</button>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
